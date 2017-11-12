@@ -2,6 +2,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import processing.core.PApplet;
+import processing.core.PConstants;
+import processing.core.PImage;
 import processing.core.PVector;
 import processing.data.Table;
 import processing.data.TableRow;
@@ -12,46 +14,79 @@ public class WhitehallMap extends PApplet {
 	public List<Node> nodes;
 	private Node selected;
 	private boolean makeEdge;
+	private int edgeMode;
 	private int turn;
 	private List<List<Node>> visited;
 	private List<List<Node>> unvisited;
+	private List<Integer> moveType;
+	private int viewMode;
+	private PImage board;
+	private boolean showBoard;
+	private List<Node> poss;
+	private boolean dirty;
 
 	public static void main(String[] args) {
 		PApplet.main("WhitehallMap");
 	}
 
 	public void settings() {
-		fullScreen();
+		size(800, 900);
 	}
 
 	public void setup() {
+		dirty = true;
+		board = loadImage("data/board.jpg");
+		board.resize(width, width);
+		showBoard = true;
 		visited = new ArrayList<List<Node>>();
 		unvisited = new ArrayList<List<Node>>();
+		moveType = new ArrayList<Integer>();
 		for (int i = 0; i < 16; i++) {
 			visited.add(new ArrayList<Node>());
 			unvisited.add(new ArrayList<Node>());
+			moveType.add(0);
 		}
 		keysPressed = new ArrayList<Integer>();
 		nodes = new ArrayList<Node>();
 		turn = 0;
+		viewMode = 0;
+
+		loadBoard("Whitehall Board - nodes (3).csv");
 	}
 
 	public void draw() {
+		if (dirty) {
+			poss = possLocations();
+			dirty = false;
+		}
 		background(200);
-		List<Node> poss = possLocations();
+		if (showBoard) {
+			image(board, 0, 0);
+		}
 		if (selected != null) {
-			if (makeEdge)
+			if (makeEdge) {
+				if (edgeMode == 0)
+					stroke(0);
+				else if (edgeMode == 1)
+					stroke(109, 51, 0);
+				else if (edgeMode == 2)
+					stroke(0, 10, 150);
 				line(selected.pos.x, selected.pos.y, mouseX, mouseY);
-			else
+
+				stroke(0);
+			} else
 				selected.pos.set(mouseX, mouseY);
 		}
-		for (Node n : nodes) {
-			n.drawConnections();
+		if (!showBoard) {
+			for (Node n : nodes) {
+				n.drawConnections(viewMode);
+			}
 		}
-		for (Node n : nodes) {
-			n.drawSelf(visited.get(turn).contains(n), unvisited.get(turn).contains(n), poss.contains(n));
+		for (int i = 0; i < nodes.size(); i++) {
+			Node n = nodes.get(i);
+			n.drawSelf(visited.get(turn).contains(n), unvisited.get(turn).contains(n), poss.contains(n), i + 1);
 		}
-		drawTimeline(9 * height / 10, 9 * width / 10, turn);
+		drawTimeline(14 * height / 15, 9 * width / 10, turn);
 	}
 
 	public void drawTimeline(float y, float w, int turn) {
@@ -60,7 +95,17 @@ public class WhitehallMap extends PApplet {
 		for (int i = 0; i <= 15; i++) {
 			line(x + i * w / 15, y - 10, x + i * w / 15, y + 10);
 		}
-		fill(255);
+		switch (moveType.get(turn)) {
+		case 0:
+			fill(255);
+			break;
+		case 1:
+			fill(255, 216, 150);
+			break;
+		case 2:
+			fill(153, 192, 255);
+			break;
+		}
 		ellipse(x + turn * w / 15, y, 20, 20);
 		textAlign(CENTER, CENTER);
 		fill(0);
@@ -69,7 +114,7 @@ public class WhitehallMap extends PApplet {
 
 	public List<Node> possLocations() {
 		List<Node> poss = new ArrayList<Node>();
-		if (visited.get(0).size() == 0)
+		if (visited.get(0).size() != 1)
 			return poss;
 		Node start = visited.get(0).get(0);
 		List<List<Node>> paths = allPaths(start, turn);
@@ -90,7 +135,14 @@ public class WhitehallMap extends PApplet {
 		for (int i = 1; i <= turns; i++) {
 			// All paths
 			for (List<Node> path : toExpand) {
-				for (Node n : path.get(path.size() - 1).neighbors) {
+				List<Node> next;
+				if (moveType.get(i) == 1)
+					next = path.get(path.size() - 1).alleyNeighbors;
+				else if (moveType.get(i) == 2)
+					next = path.get(path.size() - 1).boatNeighbors;
+				else
+					next = path.get(path.size() - 1).neighbors;
+				for (Node n : next) {
 					List<Node> newPath = new ArrayList<Node>(path);
 					newPath.add(n);
 					expanded.add(newPath);
@@ -127,21 +179,34 @@ public class WhitehallMap extends PApplet {
 		t.addColumn("x");
 		t.addColumn("y");
 		t.addColumn("neighbors");
+		t.addColumn("alley");
+		t.addColumn("boat");
 		for (Node n : nodes) {
 			TableRow r = t.addRow();
 			r.setFloat("x", n.pos.x);
 			r.setFloat("y", n.pos.y);
 			String neighbors = "";
 			for (Node x : n.neighbors) {
-				neighbors += nodes.indexOf(x) + ",";
+				neighbors += nodes.indexOf(x) + 1 + ",";
 			}
 			r.setString("neighbors", neighbors);
+			neighbors = "";
+			for (Node x : n.alleyNeighbors) {
+				neighbors += nodes.indexOf(x) + 1 + ",";
+			}
+			r.setString("alley", neighbors);
+			neighbors = "";
+			for (Node x : n.boatNeighbors) {
+				neighbors += nodes.indexOf(x) + 1 + ",";
+			}
+			r.setString("boat", neighbors);
 		}
 		saveTable(t, "data/nodes.csv");
+		System.out.println("SAVED");
 	}
 
-	public void loadBoard() {
-		Table t = loadTable("data/nodes.csv", "header");
+	public void loadBoard(String filename) {
+		Table t = loadTable(filename, "header");
 		nodes.clear();
 		for (TableRow r : t.rows()) {
 			float x = r.getFloat("x");
@@ -152,12 +217,25 @@ public class WhitehallMap extends PApplet {
 		for (int i = 0; i < t.getRowCount(); i++) {
 			String[] neigh = t.getString(i, "neighbors").split(",");
 			for (String elem : neigh) {
-				System.out.println(elem);
-				int j = Integer.parseInt(elem);
-				System.out.println(j);
-				nodes.get(i).addNeighbor(nodes.get(j));
+				if (elem.length() == 0)
+					continue;
+				int j = Integer.parseInt(elem) - 1;
+				nodes.get(i).addNeighbor(nodes.get(j), 0);
 			}
-
+			neigh = t.getString(i, "alley").split(",");
+			for (String elem : neigh) {
+				if (elem.length() == 0)
+					continue;
+				int j = Integer.parseInt(elem) - 1;
+				nodes.get(i).addNeighbor(nodes.get(j), 1);
+			}
+			neigh = t.getString(i, "boat").split(",");
+			for (String elem : neigh) {
+				if (elem.length() == 0)
+					continue;
+				int j = Integer.parseInt(elem) - 1;
+				nodes.get(i).addNeighbor(nodes.get(j), 2);
+			}
 		}
 	}
 
@@ -168,7 +246,7 @@ public class WhitehallMap extends PApplet {
 		nodes.remove(n);
 	}
 
-	public Node getMousedOver() {
+	public Node getMousedOverNode() {
 		for (Node n : nodes) {
 			if (n.pointInNode(mouseX, mouseY)) {
 				return n;
@@ -178,14 +256,23 @@ public class WhitehallMap extends PApplet {
 	}
 
 	public void mousePressed() {
-		selected = getMousedOver();
+		dirty = true;
+		selected = getMousedOverNode();
 		if (mouseButton == LEFT) {
 			if (selected != null) {
 				if (keyPressed(88)) { // x
 					deleteNode(selected);
 					selected = null;
-				} else if (keyPressed(16)) // shift
+				} else if (keyPressed(16)) { // shift
 					makeEdge = true;
+					edgeMode = 0;
+				} else if (keyPressed(65)) { // a
+					makeEdge = true;
+					edgeMode = 1;
+				} else if (keyPressed(66)) { // b
+					makeEdge = true;
+					edgeMode = 2;
+				}
 			} else {
 				nodes.add(new Node(this, mouseX, mouseY));
 			}
@@ -213,24 +300,46 @@ public class WhitehallMap extends PApplet {
 	}
 
 	public void mouseReleased() {
+		dirty = true;
 		if (makeEdge && selected != null) {
-			Node end = getMousedOver();
-			if (end != null)
-				selected.toggleNeighbor(end);
+			Node end = getMousedOverNode();
+			if (end != null) {
+				selected.toggleNeighbor(end, edgeMode);
+			}
 		}
 		makeEdge = false;
 		selected = null;
 	}
 
 	public void keyPressed() {
+		dirty = true;
+		if (keyCode == TAB) {
+			showBoard = !showBoard;
+		}
 		if (key == 's')
 			saveBoard();
 		else if (key == 'l')
-			loadBoard();
+			loadBoard("nodes.csv");
 		else if (keyCode == LEFT)
 			turn = max(turn - 1, 0);
 		else if (keyCode == RIGHT)
 			turn = min(turn + 1, 15);
+		else if (key == '1') {
+			if (keyPressed(CONTROL))
+				viewMode = 0;
+			else
+				moveType.set(turn, 0); // normal
+		} else if (key == '2') {
+			if (keyPressed(CONTROL))
+				viewMode = 1;
+			else
+				moveType.set(turn, 1); // alley
+		} else if (key == '3') {
+			if (keyPressed(CONTROL))
+				viewMode = 2;
+			else
+				moveType.set(turn, 2); // boat
+		}
 		if (!keysPressed.contains(keyCode)) {
 			keysPressed.add(keyCode);
 		}

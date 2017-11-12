@@ -79,11 +79,14 @@ public class Node {
 		}
 	}
 
-	public void drawConnections(int viewMode) {
+	public void drawConnections(int viewMode, boolean selected) {
 		parent.pushStyle();
-		if (viewMode == 0)
-			parent.stroke(0);
-		else
+		if (viewMode == 0) {
+			if (selected)
+				parent.stroke(0, 255, 0, 200);
+			else
+				parent.stroke(0);
+		} else
 			parent.stroke(0, 50);
 		for (Node n : neighbors)
 			parent.line(pos.x, pos.y, n.pos.x, n.pos.y);
@@ -104,15 +107,26 @@ public class Node {
 		parent.popStyle();
 	}
 
-	public void drawSelf(boolean clue, boolean unclue, boolean poss, int label) {
+	public void drawSelf(boolean clue, boolean unclue, boolean poss, int label, boolean selected, boolean invisible) {
 		parent.pushStyle();
-		parent.fill(255);
-		if (clue) {
-			parent.fill(252, 255, 183);
-		} else if (unclue) {
-			parent.fill(150);
+		int op = 255;
+		if (invisible) {
+			op = 100;
+			parent.noFill();
+			parent.noStroke();
+		} else {
+			parent.fill(255);
+			parent.stroke(0);
 		}
-		if (poss) {
+		if (clue) {
+			parent.fill(252, 255, 183, op);
+		} else if (unclue) {
+			parent.fill(150, op);
+		}
+		if (selected) {
+			parent.stroke(0, 255, 0);
+			parent.strokeWeight(4);
+		} else if (poss) {
 			parent.stroke(255, 0, 0);
 			parent.strokeWeight(4);
 		}
@@ -120,7 +134,8 @@ public class Node {
 		parent.textAlign(PConstants.CENTER, PConstants.CENTER);
 		parent.fill(0);
 		parent.textSize(10);
-		parent.text(label, pos.x, pos.y);
+		if (!invisible)
+			parent.text(label, pos.x, pos.y);
 		parent.popStyle();
 	}
 

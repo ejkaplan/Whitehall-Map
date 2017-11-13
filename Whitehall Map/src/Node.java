@@ -111,7 +111,7 @@ public class Node {
 		parent.pushStyle();
 		int op = 255;
 		if (invisible) {
-			op = 100;
+			op = 200;
 			parent.noFill();
 			parent.noStroke();
 		} else {
@@ -121,7 +121,7 @@ public class Node {
 		if (clue) {
 			parent.fill(252, 255, 183, op);
 		} else if (unclue) {
-			parent.fill(150, op);
+			parent.fill(0, op);
 		}
 		if (selected) {
 			parent.stroke(0, 255, 0);

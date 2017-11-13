@@ -35,7 +35,7 @@ public class WhitehallMap extends PApplet {
 	}
 
 	public void setup() {
-		hideEdges = false;
+		hideEdges = true;
 		dirty = true;
 		board = loadImage("data/board.jpg");
 		board.resize(width, width);
@@ -82,7 +82,7 @@ public class WhitehallMap extends PApplet {
 				}
 			}
 		}
-		drawTimeline(14 * height / 15, 9 * width / 10, turn);
+		drawTimeline(17 * height / 18, 9 * width / 10, turn);
 	}
 
 	public void drawTimeline(float y, float w, int turn) {

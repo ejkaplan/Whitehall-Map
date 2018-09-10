@@ -8,6 +8,7 @@ import processing.core.PVector;
 import processing.data.Table;
 import processing.data.TableRow;
 
+
 public class WhitehallMap extends PApplet {
 
 	private List<Integer> keysPressed;
@@ -255,34 +256,56 @@ public class WhitehallMap extends PApplet {
 		dirty = true;
 		if (!keyPressed)
 			selected = getMousedOverNode();
+		if (selected == null)
+			return;
+//		System.out.println(selected.pos);
+		List<Node> turnVisitClues = visited.get(turn);
+		List<Node> turnUnvisitClues = unvisited.get(turn);
 		if (mouseButton == LEFT) {
-			if (selected != null) {
-				Node mousedOver = getMousedOverNode();
-				if (mousedOver != null) {
-					if (keyPressed(67)) { // c
-						selected.toggleNeighbor(mousedOver, 0);
-					} else if (keyPressed(65)) {
-						selected.toggleNeighbor(mousedOver, 1);
-					} else if (keyPressed(66)) {
-						selected.toggleNeighbor(mousedOver, 2);
-					}
-				}
-			} else {
-				nodes.add(new Node(this, mouseX, mouseY));
-			}
-		} else if (mouseButton == RIGHT && selected != null) {
-			List<Node> turnVisitClues = visited.get(turn);
-			List<Node> turnUnvisitClues = unvisited.get(turn);
-			if (turnVisitClues.contains(selected)) {
-				turnVisitClues.remove(selected);
-				turnUnvisitClues.add(selected);
-			} else if (turnUnvisitClues.contains(selected)) {
+			if (turnUnvisitClues.contains(selected))
 				turnUnvisitClues.remove(selected);
-			} else {
+			if (turnVisitClues.contains(selected))
+				turnVisitClues.remove(selected);
+			else
 				turnVisitClues.add(selected);
-			}
-			selected = null;
+		} else if (mouseButton == RIGHT) {
+			if (turnVisitClues.contains(selected))
+				turnVisitClues.remove(selected);
+			if (turnUnvisitClues.contains(selected))
+				turnUnvisitClues.remove(selected);
+			else
+				turnUnvisitClues.add(selected);
 		}
+		selected = null;
+//		if (mouseButton == LEFT) {
+//			if (selected != null) {
+//				Node mousedOver = getMousedOverNode();
+//				if (mousedOver != null) {
+//					if (keyPressed(67)) { // c
+//						selected.toggleNeighbor(mousedOver, 0);
+//					} else if (keyPressed(65)) {
+//						selected.toggleNeighbor(mousedOver, 1);
+//					} else if (keyPressed(66)) {
+//						selected.toggleNeighbor(mousedOver, 2);
+//					}
+//				}
+//			} else {
+//				nodes.add(new Node(this, mouseX, mouseY));
+//			}
+//		} else 
+//			if (mouseButton == RIGHT && selected != null) {
+//			List<Node> turnVisitClues = visited.get(turn);
+//			List<Node> turnUnvisitClues = unvisited.get(turn);
+//			if (turnVisitClues.contains(selected)) {
+//				turnVisitClues.remove(selected);
+//				turnUnvisitClues.add(selected);
+//			} else if (turnUnvisitClues.contains(selected)) {
+//				turnUnvisitClues.remove(selected);
+//			} else {
+//				turnVisitClues.add(selected);
+//			}
+//			selected = null;
+//		}
 	}
 
 	public boolean hasClueAbout(Node n) {
@@ -295,40 +318,40 @@ public class WhitehallMap extends PApplet {
 
 	public void keyPressed() {
 		dirty = true;
-		if (keyCode == TAB)
-			showBoard = !showBoard;
-		else if (key == 'h')
-			hideEdges = !hideEdges;
-		else if (key == 'v')
-			connectionMode = !connectionMode;
-		else if (key == 'x') {
-			if (selected != null)
-				deleteNode(selected);
-		} else if (key == 'd')
-			allowDrag = !allowDrag;
-		else if (key == 's')
-			saveBoard();
-		else if (key == 'l')
-			loadBoard("nodes.csv");
-		else if (keyCode == LEFT)
+//		if (keyCode == TAB)
+//			showBoard = !showBoard;
+//		else if (key == 'h')
+//			hideEdges = !hideEdges;
+//		else if (key == 'v')
+//			connectionMode = !connectionMode;
+//		else if (key == 'x') {
+//			if (selected != null)
+//				deleteNode(selected);
+//		} else if (key == 'd')
+//			allowDrag = !allowDrag;
+//		else if (key == 's')
+//			saveBoard();
+//		else if (key == 'l')
+//			loadBoard("nodes.csv");
+		if (keyCode == LEFT)
 			turn = max(turn - 1, 0);
 		else if (keyCode == RIGHT)
 			turn = min(turn + 1, 15);
 		else if (key == '1') {
-			if (keyPressed(CONTROL))
-				viewMode = 0;
-			else
-				moveType.set(turn, 0); // normal
+//			if (keyPressed(CONTROL))
+//				viewMode = 0;
+//			else
+			moveType.set(turn, 0); // normal
 		} else if (key == '2') {
-			if (keyPressed(CONTROL))
-				viewMode = 1;
-			else
-				moveType.set(turn, 1); // alley
+//			if (keyPressed(CONTROL))
+//				viewMode = 1;
+//			else
+			moveType.set(turn, 1); // alley
 		} else if (key == '3') {
-			if (keyPressed(CONTROL))
-				viewMode = 2;
-			else
-				moveType.set(turn, 2); // boat
+//			if (keyPressed(CONTROL))
+//				viewMode = 2;
+//			else
+			moveType.set(turn, 2); // boat
 		}
 		if (!keysPressed.contains(keyCode)) {
 			keysPressed.add(keyCode);

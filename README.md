@@ -6,3 +6,4 @@ Whenever jack makes a move, use the arrow keys to move to the next time slot. If
 
 All of the spaces that are outlined in red are places where jack hypothetically could be. If there is only one such space, he is definitely there. If there are no such spaces, you probably accidentally gave contradictory clues.
 
+![alt text](https://github.com/ejkaplan/Whitehall-Map/blob/master/whitehallgif.gif "Tracking Jack")
